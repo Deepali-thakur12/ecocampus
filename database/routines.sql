@@ -64,6 +64,39 @@ EXCEPTION
 END;
 /
 
+CREATE OR REPLACE PROCEDURE register_student_account (
+    p_full_name IN students.full_name%TYPE,
+    p_email IN students.email%TYPE,
+    p_department IN students.department%TYPE,
+    p_initial_balance IN wallet_accounts.balance%TYPE,
+    p_student_id OUT students.student_id%TYPE
+)
+IS
+    v_wallet_id wallet_accounts.wallet_id%TYPE;
+BEGIN
+    SAVEPOINT register_account_start;
+
+    IF p_full_name IS NULL OR TRIM(p_full_name) IS NULL
+       OR p_email IS NULL OR TRIM(p_email) IS NULL
+       OR p_department IS NULL OR TRIM(p_department) IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20022, 'Name, email, and department are required.');
+    END IF;
+
+    INSERT INTO students (full_name, email, department)
+    VALUES (TRIM(p_full_name), LOWER(TRIM(p_email)), TRIM(p_department))
+    RETURNING student_id INTO p_student_id;
+
+    create_wallet_account(p_student_id, p_initial_balance, v_wallet_id);
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        ROLLBACK TO register_account_start;
+        RAISE_APPLICATION_ERROR(-20023, 'An account already uses this email address.');
+    WHEN OTHERS THEN
+        ROLLBACK TO register_account_start;
+        RAISE;
+END;
+/
+
 CREATE OR REPLACE PROCEDURE process_purchase (
     p_student_id IN students.student_id%TYPE,
     p_product_id IN products.product_id%TYPE,

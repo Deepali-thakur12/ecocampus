@@ -58,12 +58,40 @@
             <h1>Good to see you, <span id="welcome-name">Aarav</span> <span class="wave" aria-hidden="true">✳</span></h1>
             <p class="welcome-subtitle">Make your next campus essential a little more sustainable.</p>
           </div>
-          <label class="student-select-label" for="student-select">Viewing account
-            <select id="student-select" aria-label="Choose student account"></select>
-          </label>
+          <div class="account-actions">
+            <label class="student-select-label" for="student-select">Viewing account
+              <select id="student-select" aria-label="Choose student account"></select>
+            </label>
+            <button class="button button-dark add-account-button" id="open-add-account" type="button">Add account</button>
+          </div>
         </section>
 
         <section class="connection-alert" id="connection-alert" role="alert" hidden></section>
+
+        <dialog class="account-dialog" id="account-dialog" aria-labelledby="account-dialog-title">
+          <form id="account-form">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">NEW CAMPUS MEMBER</p>
+                <h2 id="account-dialog-title">Add an account</h2>
+              </div>
+              <button class="icon-button" id="close-account-dialog" type="button" aria-label="Close form">×</button>
+            </div>
+            <p class="panel-description">Create a student account and opening wallet balance.</p>
+            <label for="account-name">Full name</label>
+            <input id="account-name" name="name" maxlength="100" autocomplete="name" required>
+            <label for="account-email">Email</label>
+            <input id="account-email" name="email" type="email" maxlength="254" autocomplete="email" required>
+            <label for="account-department">Department</label>
+            <input id="account-department" name="department" maxlength="100" required>
+            <label for="account-balance">Opening balance (minimum ₹100)</label>
+            <div class="amount-input"><span>₹</span><input id="account-balance" name="balance" type="number" min="100" step="0.01" value="100" required></div>
+            <div class="dialog-actions">
+              <button class="button button-light" id="cancel-account" type="button">Cancel</button>
+              <button class="button button-dark" type="submit">Create account</button>
+            </div>
+          </form>
+        </dialog>
 
         <section class="stats-grid" aria-label="Account summary">
           <article class="stat-card wallet-stat">

@@ -234,6 +234,53 @@ app.get("/api/dashboard", requireDatabase, async (req, res) => {
   }
 });
 
+app.post("/api/accounts", requireDatabase, async (req, res) => {
+  let connection;
+  try {
+    const fullName = typeof req.body.name === "string" ? req.body.name.trim() : "";
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const department = typeof req.body.department === "string" ? req.body.department.trim() : "";
+    const openingBalance = requirePositiveMoney(req.body.balance, "Opening balance");
+
+    if (!fullName || !email || !department) {
+      return res.status(400).json({ error: "Name, email, and department are required." });
+    }
+    if (fullName.length > 100 || email.length > 254 || department.length > 100) {
+      return res.status(400).json({ error: "One or more account details are too long." });
+    }
+    if (openingBalance < 100) {
+      return res.status(400).json({ error: "Opening balance must be at least INR 100." });
+    }
+
+    connection = await pool.getConnection();
+    const result = await connection.execute(
+      `BEGIN
+         register_student_account(
+           :fullName,
+           :email,
+           :department,
+           :openingBalance,
+           :studentId
+         );
+       END;`,
+      {
+        fullName,
+        email,
+        department,
+        openingBalance,
+        studentId: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      }
+    );
+    await connection.commit();
+    return res.status(201).json({ studentId: result.outBinds.studentId });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    return sendError(res, error);
+  } finally {
+    if (connection) await connection.close();
+  }
+});
+
 app.post("/api/purchases", requireDatabase, async (req, res) => {
   let connection;
   try {

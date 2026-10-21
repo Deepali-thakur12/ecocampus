@@ -36,9 +36,12 @@ estimated containers avoided when this is selected.
 ## Connect the dashboard to Oracle
 
 The Node.js API connects the browser dashboard to the Oracle schema and invokes
-`PROCESS_PURCHASE` and `TRANSFER_FUNDS`. Wallet balances, inventory, activity,
-discounts, sustainability totals, and audit records are read or updated in
-Oracle when Oracle mode is active.
+`REGISTER_STUDENT_ACCOUNT`, `PROCESS_PURCHASE`, and `TRANSFER_FUNDS`. Use
+**Add account** on the dashboard to create a student and opening wallet. Each
+account needs a name, unique email, department, and opening balance of at least
+INR 100. The Overview account selector lets you switch between accounts.
+Wallet balances, inventory, activity, discounts, sustainability totals, and
+audit records are read or updated in Oracle when Oracle mode is active.
 
 1. Install the database schema and PL/SQL objects with `database/install.sql`.
    Create or use a **test schema** for this project.
@@ -153,6 +156,8 @@ write old balance, new balance, delta, wallet ID, and timestamp to
 
 - A wallet is unique per student. Its opening balance must be at least INR 100;
   after opening, purchases and transfers may reduce it to zero but never below.
+- New student accounts are added with a unique email and an opening wallet
+  balance of at least INR 100.
 - Purchase discounts are 5% for subtotals of at least INR 500, 10% for at
   least INR 1,000, plus 2 percentage points for using a reusable container on
   a refillable product, capped at 12%.

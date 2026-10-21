@@ -116,6 +116,7 @@ function showOracleUnavailable(message) {
   alert.textContent = `Oracle mode is enabled, but the database is unavailable. ${message}`;
   alert.hidden = false;
   document.getElementById("reset-demo").hidden = true;
+  document.getElementById("open-add-account").disabled = true;
   document.querySelectorAll("#transfer-form input, #transfer-form select, #transfer-form button, #reusable-container")
     .forEach((control) => { control.disabled = true; });
   render();
@@ -226,6 +227,7 @@ function renderStudents() {
   }
 
   const student = currentStudent();
+  document.getElementById("open-add-account").disabled = oracleUnavailable;
   if (!student) {
     document.getElementById("welcome-name").textContent = "";
     document.getElementById("profile-name").textContent = "";
@@ -249,6 +251,59 @@ function calculateDiscount(subtotal, reusableContainer) {
   else if (subtotal >= 500) percent = 5;
   if (reusableContainer) percent += 2;
   return Math.min(percent, 12);
+}
+
+async function addAccount(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const name = document.getElementById("account-name").value.trim();
+  const email = document.getElementById("account-email").value.trim().toLowerCase();
+  const department = document.getElementById("account-department").value.trim();
+  const balance = Number(document.getElementById("account-balance").value);
+
+  if (!name || !email || !department) {
+    showToast("Enter a name, email, and department.", true);
+    return;
+  }
+  if (!Number.isFinite(balance) || balance < 100 || !hasAtMostTwoDecimalPlaces(balance)) {
+    showToast("Opening balance must be at least ₹100 with up to two decimal places.", true);
+    return;
+  }
+
+  submitButton.disabled = true;
+  try {
+    if (oracleMode) {
+      const result = await apiRequest("/api/accounts", {
+        method: "POST",
+        body: JSON.stringify({ name, email, department, balance })
+      });
+      activeStudentId = Number(result.studentId);
+      await loadOracleDashboard();
+    } else {
+      if (data.students.some((student) => student.email?.toLowerCase() === email)) {
+        throw new Error("An account already uses this email address.");
+      }
+      const studentId = Math.max(0, ...data.students.map((student) => student.id)) + 1;
+      data.students.push({ id: studentId, name, email, department, balance });
+      activeStudentId = studentId;
+      if (!saveData()) {
+        data.students.pop();
+        activeStudentId = data.students[0]?.id || 1;
+        throw new Error("This browser could not save the new account. Check browser storage and try again.");
+      }
+      render();
+    }
+
+    form.reset();
+    document.getElementById("account-balance").value = "100";
+    document.getElementById("account-dialog").close();
+    showToast(`Account created for ${name}.`);
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    submitButton.disabled = false;
+  }
 }
 
 function renderProducts() {
@@ -540,6 +595,17 @@ document.getElementById("student-select").addEventListener("change", (event) => 
   }
 });
 document.getElementById("transfer-form").addEventListener("submit", transferFunds);
+document.getElementById("open-add-account").addEventListener("click", () => {
+  document.getElementById("account-dialog").showModal();
+  document.getElementById("account-name").focus();
+});
+document.getElementById("account-form").addEventListener("submit", addAccount);
+document.getElementById("close-account-dialog").addEventListener("click", () => {
+  document.getElementById("account-dialog").close();
+});
+document.getElementById("cancel-account").addEventListener("click", () => {
+  document.getElementById("account-dialog").close();
+});
 document.getElementById("reset-demo").addEventListener("click", () => {
   if (oracleMode) return;
   data = cloneInitialData();
